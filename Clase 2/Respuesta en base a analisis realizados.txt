@@ -1,0 +1,31 @@
+B) Al incrementar la prioridad de una de las tareas (TaskB respecto de TaskA), 
+se observa que la tarea de mayor prioridad (TaskB) pasa a ejecutarse de forma casi exclusiva, 
+mientras que la tarea de menor prioridad (TaskA) deja de ejecutarse o lo hace de manera muy esporádica.
+
+Esto ocurre porque ambas tareas utilizan ets_delay_us(), que es un retardo bloqueante que no cede el control al scheduler de FreeRTOS. 
+En consecuencia, la tarea de mayor prioridad nunca entra en estado bloqueado ni suspendido,
+por lo que el sistema operativo no tiene oportunidad de planificar la ejecución de la tarea de menor prioridad.
+
+C) Al reemplazar los retardos bloqueantes (ets_delay_us) por vTaskDelay, 
+las tareas pasan a bloquearse voluntariamente durante el tiempo especificado, 
+liberando el CPU para que el scheduler de FreeRTOS pueda ejecutar otras tareas.
+
+Dado que ambas tareas tienen la misma prioridad, 
+el sistema operativo aplica un esquema de planificación round-robin, 
+permitiendo que ambas tareas se ejecuten de manera alternada y equitativa.
+
+D) En este apartado se implementa una tarea adicional (TaskMonitor) que permite observar el uso de stack de cada tarea mediante la función "uxTaskGetStackHighWaterMark".
+
+Esta función devuelve el mínimo espacio libre de stack que ha tenido una tarea desde su creación, 
+lo que permite evaluar cuán cerca está del desbordamiento de pila. Valores bajos indican un alto uso del stack y posible riesgo de overflow.
+
+Además, se consulta la prioridad de la tarea app_main utilizando uxTaskGetPriority(NULL), verificando que la misma posee prioridad baja dentro del sistema.
+
+E) En este apartado se incrementa la prioridad de las tareas principales (TaskA y TaskB), asignándoles un nivel superior respecto a la tarea de monitoreo (TaskMonitor).
+
+Dado que TaskA y TaskB poseen la misma prioridad y utilizan vTaskDelay, el scheduler de FreeRTOS aplica planificación round-robin, 
+permitiendo su ejecución alternada de forma equitativa.
+
+Por otro lado, la tarea TaskMonitor, al tener menor prioridad, 
+solo se ejecuta cuando las tareas de mayor prioridad se encuentran en estado bloqueado. 
+Esto implica que su ejecución queda supeditada a los tiempos de espera de las demás tareas.
